@@ -289,7 +289,7 @@ Btn CleanOptionBtn(320, 50, 240, 25, 15, 'n', 1);
 char *_URS_4SG_ParamLabel[4] = { "GLUCOSE:", "pH LEVEL:", "SPECIFIC GRAVITY:", "PROTEIN:" };
 char *_URS_10T_ParamLabel[10] = { "LEUKOCYTES:", "NITRITE:", "UROBILINOGEN:", "PROTEIN:", "pH LEVEL:", "BLOOD:", "SPECIFIC GRAVITY:", "KETONE:", "BILIRUBIN:", "GLUCOSE:" };
 char *_URS_11T_ParamLabel[11] = { "LEUKOCYTES:", "NITRITE:", "UROBILINOGEN:", "PROTEIN:", "pH LEVEL:", "BLOOD:", "SPECIFIC GRAVITY:", "ASCORBATE:", "KETONE:", "BILIRUBIN:", "GLUCOSE:" };
-char *_URS_14_ParamLabel[14] = { "UROBILINOGEN:", "BILIRUBIN:", "KETONE:", "CREATINE:", "BLOOD:", "PROTEIN:", "MICROALBUMIN:", "NITRITE:", "LEUKOCYTE:", "GLUCOSE:", "SPECIFIC GRAVITY:", "pH LEVEL:", "ASCOBRATE:", "CALCIUM:" };
+char *_URS_14_ParamLabel[14] = { "UROBILINOGEN:", "BILIRUBIN:", "KETONE:", "CREATININE:", "BLOOD:", "PROTEIN:", "MICROALBUMIN:", "NITRITE:", "LEUKOCYTE:", "GLUCOSE:", "SPECIFIC GRAVITY:", "pH LEVEL:", "ASCOBRATE:", "CALCIUM:" };
 
 // ### 
 // edit the value base on your results; ex: for glucose, set the value of _URS_4SG_ParamValue[0] = "15"; treat it as string in multidimension array ; dont declare any string
@@ -356,8 +356,8 @@ bool isDoingHttpRequest = false;
 
 // ================= wifi ================================
 
-const char *ssid = "Red"; 
-const char *pass = "kissmuna";
+const char *ssid = "OPPOA95"; 
+const char *pass = "00000000";
 
 WiFiMulti WiFiMulti;
 
@@ -381,7 +381,7 @@ TinyStepper_28BYJ_48 stepper;
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
 
 // tcs cals
-uint16_t calibrated_R, calibrated_G, calibrated_B;
+float calibrated_R, calibrated_G, calibrated_B;
 byte RGBvals[14][3];
 
 // reading results // URS 14
@@ -955,6 +955,7 @@ void displayLocked() {
 void displayEjected() {
   tft.fillScreen(SECONDARY_COLOR);
   tft.setCursor(200, 230);
+
   tft.setTextColor(PRIME_COLOR, SECONDARY_COLOR);
   tft.setFreeFont(SECONDARY_FONT);
   tft.pushImage(180, 70,  iconWidth,  iconHeight, successIcon);
@@ -2081,7 +2082,7 @@ void parameterOptionPressCheck(uint8_t button) {
       displayAnalyzing();
       readStrip();
       addNewScreenOnArray(208); // 14
-      stepper.moveRelativeInSteps(-8000);
+      //eject sana
       break;
   }
 }
@@ -2163,9 +2164,12 @@ void patientRecordNamesPressCheck(uint8_t btnIndex){
 void cleanOptionBtnPressCheck(uint8_t button) {
   switch (button) {
     case 0:
+    
+      stepper.moveRelativeInSteps(-7000);
       addNewScreenOnArray(502);
       break;
     case 1:
+      stepper.moveRelativeInSteps(1880);
       addNewScreenOnArray(503);
       break;
   }
@@ -2547,16 +2551,21 @@ void calibrateTCS() {
   uint16_t r, g, b, c;
   delay(2000);
 
-  stepper.moveRelativeInSteps(2500);
+  stepper.moveRelativeInSteps(840);
   delay(4000);
   tcs.getRawData(&r, &g, &b, &c);
+  delay(60);
 
   calibrated_R = r;
+  Serial.print("Calibrated R: "); Serial.print(calibrated_R);Serial.print(" ");
   calibrated_G = g;
+  Serial.print("Calibrated G: "); Serial.print(calibrated_G);Serial.print(" ");
   calibrated_B = b;
+  Serial.print("Calibrated B: "); Serial.print(calibrated_B);Serial.print(" ");
 
   delay(4000);
-  stepper.moveRelativeInSteps(-3000);
+
+  stepper.moveRelativeInSteps(-840);
 }
 
 void readStrip() {
@@ -2564,7 +2573,9 @@ void readStrip() {
   uint16_t r, g, b, c;
   float dividedRes;
 
-  stepper.moveRelativeInSteps(1780);
+  // higop onti
+  // stepper.moveRelativeInSteps(1780);
+
 
   for (int i = 0; i < 14; i++) {
 
@@ -2573,15 +2584,18 @@ void readStrip() {
 
     // compute
     dividedRes = r / calibrated_R;
-    r = int(round(dividedRes * 256));
+    Serial.print ("dividedRes: "); Serial.print(dividedRes); 
+    Serial.print ("calibrated_R: "); Serial.print(calibrated_R); 
+    r = dividedRes * 256;
+    Serial.print ("r: "); Serial.print(r); 
     RGBvals[i][0] = r;
 
     dividedRes = g / calibrated_G;
-    g = int(round(dividedRes * 256));
+    g = dividedRes * 256;
     RGBvals[i][1] = g;
 
     dividedRes = b / calibrated_B;
-    b = int(round(dividedRes * 256));
+    b = dividedRes * 256;
     RGBvals[i][2] = b;
 
     // move the motor 1 step
@@ -2603,6 +2617,9 @@ void readStrip() {
   readingResults[11] = getPH(RGBvals[11][0], RGBvals[11][1], RGBvals[11][2]);
   readingResults[12] = getASC(RGBvals[12][0], RGBvals[12][1], RGBvals[12][2]);
   readingResults[13] = getCAL(RGBvals[13][0], RGBvals[13][1], RGBvals[13][2]);
+
+  
+  stepper.moveRelativeInSteps(-5880);
 
 }
 
